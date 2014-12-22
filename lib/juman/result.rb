@@ -2,7 +2,17 @@ class Juman
   class Result
     include Enumerable
     def initialize(lines)
-      @morphemes = lines.map{|line| Morpheme.new(line) }
+      @morphemes = []
+      prev_morpheme = nil
+      lines.each{|line|
+        morpheme = Morpheme.new(line)
+        if prev_morpheme && morpheme.candidate
+          prev_morpheme.candidates << morpheme
+        else
+          @morphemes << morpheme
+          prev_morpheme = morpheme
+        end
+      }
     end
 
     def each(&block)

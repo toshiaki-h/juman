@@ -1,6 +1,7 @@
 # coding: utf-8
 
 require 'rspec'
+require 'rspec/its'
 require 'juman'
 
 ENV['PATH'] = "#{File.expand_path(File.dirname(__FILE__))}/bin:#{ENV['PATH']}"
@@ -22,6 +23,24 @@ describe Juman::Morpheme do
     its(:form_id){ should be 2 }
     its(:info){ should eq '情 報' }
   end
+
+  context 'when initialized with a candidate line of the result of "渋谷"' do
+    subject { Juman::Morpheme.new(
+        "@ 渋谷 しぶや 渋谷 名詞 6 地名 4 * 0 * 0 \"代表表記:渋谷/しぶや 地名:日本:東京都:区\"\n") }
+    its(:surface){ should eq '渋谷' }
+    its(:pronunciation){ should eq 'しぶや' }
+    its(:base){ should eq '渋谷' }
+    its(:pos){ should eq '名詞' }
+    its(:pos_id){ should be 6 }
+    its(:pos_spec){ should eq '地名' }
+    its(:pos_spec_id){ should be 4 }
+    its(:type){ should be_nil }
+    its(:type_id){ should be 0 }
+    its(:form){ should be_nil }
+    its(:form_id){ should be 0 }
+    its(:info){ should eq '代表表記:渋谷/しぶや 地名:日本:東京都:区' }
+    its(:candidate){ should be true }
+  end
 end
 describe Juman::Result do
   context 'when initialized with an Enumerator of the result of "見る"' do
@@ -37,6 +56,45 @@ describe Juman::Result do
         subject { @result[0] }
         it 'should return Juman::Morpheme' do
           should be_an_instance_of Juman::Morpheme
+        end
+      end
+    end
+    describe '#each' do
+      context 'without block' do
+        subject { @result.each }
+        it 'should return Enumerator' do
+          should be_an_instance_of Enumerator
+        end
+      end
+      context 'with block' do
+        subject { @result.each{} }
+        it 'should return self' do
+          should be @result
+        end
+      end
+    end
+  end
+
+  context 'when initialized with an Enumerator of the result of "渋谷"' do
+    before { @result = Juman::Result.new(
+      ["渋谷 しぶたに 渋谷 名詞 6 人名 5 * 0 * 0 \"人名:日本:姓:16:0.00494\"",
+       "@ 渋谷 しぶや 渋谷 名詞 6 人名 5 * 0 * 0 \"人名:日本:姓:16:0.00494\"",
+       "@ 渋谷 しぶや 渋谷 名詞 6 地名 4 * 0 * 0 \"代表表記:渋谷/しぶや 地名:日本:東京都:区\"",].to_enum) }
+    subject { @result }
+    it { should be_an Enumerable }
+    it { should respond_to :each }
+    it { should respond_to :[] }
+    it { should respond_to :at }
+    describe '#[]' do
+      context 'when argument 0' do
+        subject { @result[0] }
+        it 'should return Juman::Morpheme' do
+          should be_an_instance_of Juman::Morpheme
+        end
+        it 'should have candidates' do
+          @result[0].candidate.should be false
+          @result[0].candidates.length.should be 2
+          @result[0].candidates[0].should be_an_instance_of Juman::Morpheme
         end
       end
     end
